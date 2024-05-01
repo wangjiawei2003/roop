@@ -1,5 +1,4 @@
-
-on: 
+on:
   workflow_dispatch:
 
 jobs:
@@ -8,12 +7,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Set up ffmpeg
         uses: FedericoCarboni/setup-ffmpeg@v2
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+
       - run: pip install -r requirements-headless.txt
+
       - run: python run.py -s .github\examples\source.jpg -t .github\examples\target.mp4 -o .github\examples\output.mp4
-      - run: ffmpeg -i .github\examples\snapshot.mp4 -i .github\examples\output.mp4 -filter_complex psnr -f null -
+
+      - name: Package output.mp4
+        run: ffmpeg -i .github\examples\output.mp4 -vf "scale=640:360,setsar=1" -c:v libx264 -crf 23 -c:a aac -b:a 128k .github\examples\packaged_output.mp4
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: packaged_output
+          path: .github\examples\packaged_output.mp4
